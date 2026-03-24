@@ -122,49 +122,7 @@ let reactTimer = null;        // auto-return timer
 let currentIdleSvg = null;    // tracks which SVG is currently showing
 
 function handleClick(clientX) {
-  if (miniMode) {
-    window.electronAPI.exitMiniMode();
-    return;
-  }
-  if (isReacting || isDragReacting) return;
-
-  // Non-idle states: single click → focus terminal directly, no reaction animation
-  if (currentIdleSvg !== "clawd-idle-follow.svg" && currentIdleSvg !== "clawd-idle-living.svg") {
-    window.electronAPI.focusTerminal();
-    return;
-  }
-
-  // Idle states: immediate focus on first click, still track for reactions
-  clickCount++;
-  if (clickCount === 1) {
-    firstClickDir = clientX < container.offsetWidth / 2 ? "left" : "right";
-    window.electronAPI.focusTerminal();  // Instant — no 400ms wait
-  }
-
-  if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
-
-  if (clickCount >= 4) {
-    // 4+ clicks → flail reaction (东张西望)
-    clickCount = 0;
-    firstClickDir = null;
-    playReaction(REACT_DOUBLE_SVG, REACT_DOUBLE_DURATION);
-  } else if (clickCount >= 2) {
-    // 2-3 clicks → wait briefly for more, then poke reaction
-    clickTimer = setTimeout(() => {
-      clickTimer = null;
-      const svg = firstClickDir === "left" ? REACT_LEFT_SVG : REACT_RIGHT_SVG;
-      clickCount = 0;
-      firstClickDir = null;
-      playReaction(svg, REACT_SINGLE_DURATION);
-    }, CLICK_WINDOW_MS);
-  } else {
-    // 1 click → reset counter after timeout
-    clickTimer = setTimeout(() => {
-      clickTimer = null;
-      clickCount = 0;
-      firstClickDir = null;
-    }, CLICK_WINDOW_MS);
-  }
+  window.electronAPI.focusTerminal();
 }
 
 function playReaction(svgFile, durationMs) {

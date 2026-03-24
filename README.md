@@ -19,7 +19,7 @@ Clawd on Desk （macOS 适配版 + Claude 回复气泡版）
 - **眼球追踪** — 待机状态下 Clawd 跟随鼠标，身体微倾，影子拉伸
 - **睡眠序列** — 60 秒无活动 → 打哈欠 → 打盹 → 倒下 → 睡觉；移动鼠标触发惊醒弹起动画
 - **点击穿透** — 透明区域的点击直接穿透到下方窗口，只有角色本体可交互
-- **点击反应** — 双击戳戳，连点 4 下东张西望
+- **单击直达 Claude Code** — 单击桌宠立即聚焦当前会话；如果没有活跃会话，则用 iTerm 新开 Claude Code 标签页
 - **任意状态拖拽** — 随时抓起 Clawd（Pointer Capture 防止快甩丢失），松手恢复当前动画
 - **多会话追踪** — 多个 Claude Code 会话自动解析到最高优先级状态
 - **子代理感知** — 1 个子代理杂耍，2 个以上指挥
@@ -60,7 +60,7 @@ Clawd on Desk （macOS 适配版 + Claude 回复气泡版）
 | 鼠标悬停 | 探出身体 + 招手（向屏幕内侧滑出 25px） | <img src="assets/gif/clawd-mini-peek.gif" width="120"> |
 | 通知 / 权限请求 | 感叹号弹出 + >< 挤眼 | <img src="assets/gif/clawd-mini-alert.gif" width="120"> |
 | 任务完成 | 花花 + ^^ 眯眼 + 星星闪烁 | <img src="assets/gif/clawd-mini-happy.gif" width="120"> |
-| Peek 时点击 | 退出极简模式（抛物线跳回） | |
+| Peek 时点击 | 打开 iTerm 中的 Claude Code 会话 | |
 
 ## macOS 安装
 

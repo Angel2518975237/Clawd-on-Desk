@@ -17,7 +17,7 @@ A desktop pet that reacts to your [Claude Code](https://docs.anthropic.com/en/do
 - **Eye tracking** — Clawd follows your cursor in idle state, with body lean and shadow stretch
 - **Sleep sequence** — yawning, dozing, collapsing, sleeping after 60s idle; mouse movement triggers a startled wake-up animation
 - **Click-through** — transparent areas pass clicks to windows below; only Clawd's body is interactive
-- **Click reactions** — double-click for a poke, 4 clicks for a flail
+- **One-click Claude Code access** — click Clawd once to focus the current session, or open a fresh Claude Code tab in iTerm when no session is active
 - **Drag from any state** — grab Clawd anytime (Pointer Capture prevents fast-flick drops), release to resume
 - **Multi-session tracking** — multiple Claude Code sessions resolve to the highest-priority state
 - **Subagent awareness** — juggling for 1 subagent, conducting for 2+
@@ -58,7 +58,7 @@ Drag Clawd to the right screen edge (or right-click → "极简模式") to enter
 | Hover | Peek out + wave (slides 25px into screen) | <img src="assets/gif/clawd-mini-peek.gif" width="120"> |
 | Notification / PermissionRequest | Exclamation mark pop + >< squint eyes | <img src="assets/gif/clawd-mini-alert.gif" width="120"> |
 | Stop / PostCompact | Flower + ^^ happy eyes + sparkles | <img src="assets/gif/clawd-mini-happy.gif" width="120"> |
-| Click during peek | Exit mini mode (parabolic jump back) | |
+| Click during peek | Open the Claude Code conversation in iTerm | |
 
 ## macOS Install
 

@@ -223,6 +223,7 @@ const SLEEP_SEQUENCE = new Set(["yawning", "dozing", "collapsing", "sleeping", "
 
 // ── Session tracking ──
 const sessions = new Map(); // session_id → { state, updatedAt, sourcePid, cwd }
+let lastClaudeCwd = null;
 const SESSION_STALE_MS = 300000; // 5 min cleanup
 const WORKING_STALE_MS = 30000;  // 30s: working/thinking with no new event → decay to idle
 const STATE_PRIORITY = {
@@ -707,6 +708,7 @@ function updateSession(sessionId, state, event, sourcePid, cwd) {
   const existing = sessions.get(sessionId);
   const srcPid = sourcePid || (existing && existing.sourcePid) || null;
   const srcCwd = cwd || (existing && existing.cwd) || "";
+  if (srcCwd) lastClaudeCwd = srcCwd;
 
   if (event === "SessionEnd") {
     sessions.delete(sessionId);
@@ -1304,6 +1306,12 @@ function disableDoNotDisturb() {
 // Uses a persistent PowerShell process to avoid cold-start delay on each click.
 // Add-Type compiles the C# interop once at startup; subsequent focus calls are near-instant.
 const { execFile, spawn } = require("child_process");
+const CLAUDE_CLI_CANDIDATES = [
+  path.join(os.homedir(), ".petclaw", "node", "bin", "claude"),
+  "/opt/homebrew/bin/claude",
+  "/usr/local/bin/claude",
+  "claude",
+];
 
 const PS_FOCUS_ADDTYPE = `
 Add-Type @"
@@ -1362,6 +1370,17 @@ function killFocusHelper() {
   if (psProc) { psProc.kill(); psProc = null; }
 }
 
+function getBestSession() {
+  let best = null;
+  for (const [, session] of sessions) {
+    const pri = STATE_PRIORITY[session.state] || 0;
+    if (!best || pri > best.priority || (pri === best.priority && session.updatedAt > best.updatedAt)) {
+      best = { ...session, priority: pri };
+    }
+  }
+  return best;
+}
+
 function focusTerminalWindow(sourcePid) {
   if (!sourcePid) return;
   if (isMac) {
@@ -1407,6 +1426,62 @@ function focusTerminalWindow(sourcePid) {
     // Re-init persistent process for next call
     initFocusHelper();
   }
+}
+
+function resolveClaudeCliPath() {
+  for (const candidate of CLAUDE_CLI_CANDIDATES) {
+    if (!candidate) continue;
+    if (candidate.includes(path.sep)) {
+      if (fs.existsSync(candidate)) return candidate;
+      continue;
+    }
+    return candidate;
+  }
+  return "claude";
+}
+
+function shellQuote(value) {
+  return `'${String(value).replace(/'/g, `'\\''`)}'`;
+}
+
+function appleScriptQuote(value) {
+  return String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+function openClaudeInITerm(cwd, shouldContinue) {
+  if (!isMac) return;
+
+  const targetCwd = cwd && fs.existsSync(cwd) ? cwd : os.homedir();
+  const cliPath = resolveClaudeCliPath();
+  const command = `cd ${shellQuote(targetCwd)}; exec ${shellQuote(cliPath)}${shouldContinue ? " -c" : ""}`;
+  const escapedCommand = appleScriptQuote(command);
+  const script = `
+    tell application "iTerm2"
+      activate
+      if (count of windows) = 0 then
+        create window with default profile command "${escapedCommand}"
+      else
+        tell current window
+          create tab with default profile command "${escapedCommand}"
+        end tell
+      end if
+    end tell
+  `;
+
+  execFile("osascript", ["-e", script], { timeout: 5000 }, (err) => {
+    if (err) console.warn("openClaudeInITerm failed:", err.message);
+  });
+}
+
+function openClaudeCodeConversation() {
+  const bestSession = getBestSession();
+  if (bestSession?.sourcePid) {
+    focusTerminalWindow(bestSession.sourcePid);
+    return;
+  }
+
+  const cwd = bestSession?.cwd || lastClaudeCwd || os.homedir();
+  openClaudeInITerm(cwd, Boolean(bestSession?.cwd || lastClaudeCwd));
 }
 
 // ── HTTP server ──
@@ -2167,18 +2242,7 @@ function createWindow() {
   });
 
   ipcMain.on("focus-terminal", () => {
-    // Find the best session to focus: prefer highest priority (non-idle), then most recent
-    let bestPid = null, bestTime = 0, bestPriority = -1;
-    for (const [, s] of sessions) {
-      if (!s.sourcePid) continue;
-      const pri = STATE_PRIORITY[s.state] || 0;
-      if (pri > bestPriority || (pri === bestPriority && s.updatedAt > bestTime)) {
-        bestPid = s.sourcePid;
-        bestTime = s.updatedAt;
-        bestPriority = pri;
-      }
-    }
-    if (bestPid) focusTerminalWindow(bestPid);
+    openClaudeCodeConversation();
   });
 
   ipcMain.on("show-session-menu", () => {
