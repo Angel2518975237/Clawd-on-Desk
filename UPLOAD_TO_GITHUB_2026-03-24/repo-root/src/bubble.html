@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ── Theme variables ── */
+:root {
+  --ease-spring: var(--ease-spring);
+  --card-bg: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.08);
+  --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --card-inset: none;
+  --text-primary: #18181b;
+  --header-color: #374151;
+  --cmd-bg: #f4f4f5;
+  --cmd-border: rgba(0, 0, 0, 0.06);
+  --cmd-color: #374151;
+  --cmd-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+  --scroll-thumb: rgba(0, 0, 0, 0.15);
+  --scroll-thumb-hover: rgba(0, 0, 0, 0.25);
+  --deny-bg: #ffffff;
+  --deny-color: #52525b;
+  --deny-border: #d1d5db;
+  --deny-hover-bg: #f9fafb;
+  --deny-hover-border: #9ca3af;
+  --sug-bg: #ffffff;
+  --sug-color: #71717a;
+  --sug-border: #e5e7eb;
+  --sug-hover-bg: #f9fafb;
+  --sug-hover-border: #d1d5db;
+  --sug-hover-color: #374151;
+  --sug-arrow: #9ca3af;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --card-bg: #18181b;
+    --card-border: rgba(255, 255, 255, 0.1);
+    --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    --text-primary: #f4f4f5;
+    --header-color: #e4e4e7;
+    --cmd-bg: #09090b;
+    --cmd-border: rgba(255, 255, 255, 0.06);
+    --cmd-color: #a1a1aa;
+    --cmd-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    --scroll-thumb: rgba(255, 255, 255, 0.1);
+    --scroll-thumb-hover: rgba(255, 255, 255, 0.2);
+    --deny-bg: rgba(255, 255, 255, 0.05);
+    --deny-color: #e4e4e7;
+    --deny-border: rgba(255, 255, 255, 0.1);
+    --deny-hover-bg: rgba(255, 255, 255, 0.1);
+    --deny-hover-border: rgba(255, 255, 255, 0.15);
+    --sug-bg: rgba(255, 255, 255, 0.03);
+    --sug-color: #a1a1aa;
+    --sug-border: rgba(255, 255, 255, 0.06);
+    --sug-hover-bg: rgba(255, 255, 255, 0.08);
+    --sug-hover-border: rgba(255, 255, 255, 0.15);
+    --sug-hover-color: #e4e4e7;
+    --sug-arrow: #d4d4d8;
+  }
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.card {
+  position: absolute;
+  bottom: 6px; left: 6px; right: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--card-shadow), var(--card-inset, none);
+  color: var(--text-primary);
+  opacity: 0;
+  transform: translateX(60px);
+  transition: opacity 0.35s var(--ease-spring), transform 0.4s var(--ease-spring);
+  overflow: hidden;
+}
+
+.card.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+.card.hiding {
+  opacity: 0;
+  transform: translateX(60px);
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0;
+}
+.header-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--header-color);
+  letter-spacing: 0.02em;
+}
+
+/* ── Tool pill ── */
+.tool-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #fff;
+  letter-spacing: 0.05em;
+  background: #52525b;
+}
+.tool-pill[data-tool="Bash"]  { background: #d97757; }
+.tool-pill[data-tool="Edit"]  { background: #5b8dd9; }
+.tool-pill[data-tool="Write"] { background: #8b7ec7; }
+.tool-pill[data-tool="Read"]  { background: #5a9e6f; }
+.tool-pill[data-tool="Glob"]  { background: #5a9eab; }
+.tool-pill[data-tool="Grep"]  { background: #5a9eab; }
+.tool-pill[data-tool="Agent"] { background: #c47a9a; }
+
+/* ── Command block ── */
+.command-block {
+  padding: 12px;
+  background: var(--cmd-bg);
+  border: 1px solid var(--cmd-border);
+  border-radius: 10px;
+  font-family: "SF Mono", "ui-monospace", "Cascadia Code", "Fira Code", monospace;
+  font-size: 12px;
+  color: var(--cmd-color);
+  line-height: 1.5;
+  max-height: 80px;
+  overflow-y: auto;
+  word-break: break-all;
+  box-shadow: var(--cmd-shadow);
+}
+.command-block::-webkit-scrollbar { width: 6px; }
+.command-block::-webkit-scrollbar-track { background: transparent; }
+.command-block::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+.command-block::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hover); }
+
+/* ── Action buttons ── */
+.actions {
+  display: flex;
+  gap: 8px;
+}
+.btn {
+  flex: 1;
+  padding: 7px 0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s var(--ease-spring);
+  outline: none;
+}
+.btn:active:not(:disabled) { transform: scale(0.96); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-allow {
+  background: #d97757;
+  color: #fff;
+  border: 1px solid transparent;
+}
+.btn-allow:hover:not(:disabled) {
+  background: #c4684a;
+}
+
+.btn-deny {
+  background: var(--deny-bg);
+  color: var(--deny-color);
+  border: 1px solid var(--deny-border);
+}
+.btn-deny:hover:not(:disabled) {
+  background: var(--deny-hover-bg);
+  border-color: var(--deny-hover-border);
+}
+
+/* ── Suggestion buttons (dynamic) ── */
+.suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.btn-suggestion {
+  display: block;
+  width: 100%;
+  padding: 7px 12px;
+  background: var(--sug-bg);
+  color: var(--sug-color);
+  border: 1px solid var(--sug-border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-spring);
+  outline: none;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+}
+.btn-suggestion::after {
+  content: '→';
+  position: absolute;
+  right: 14px;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: all 0.2s ease;
+  color: var(--sug-arrow);
+}
+.btn-suggestion:hover:not(:disabled) {
+  background: var(--sug-hover-bg);
+  border-color: var(--sug-hover-border);
+  color: var(--sug-hover-color);
+  padding-right: 34px;
+}
+.btn-suggestion:hover:not(:disabled)::after {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.btn-suggestion:active:not(:disabled) { transform: scale(0.98); }
+.btn-suggestion:disabled { opacity: 0.4; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="header">
+    <span class="header-title">Permission Request</span>
+    <span class="tool-pill" id="toolPill"></span>
+  </div>
+
+  <div class="command-block" id="commandBlock"></div>
+  
+  <div class="actions">
+    <button class="btn btn-allow" id="btnAllow">Allow</button>
+    <button class="btn btn-deny" id="btnDeny">Deny</button>
+  </div>
+  
+  <div class="suggestions" id="suggestions"></div>
+</div>
+
+<script>
+// ⚠️ 以下 JS 完全没有修改，这是原版完整的功能逻辑
+const card = document.getElementById("card");
+const toolPill = document.getElementById("toolPill");
+const commandBlock = document.getElementById("commandBlock");
+const btnAllow = document.getElementById("btnAllow");
+const btnDeny = document.getElementById("btnDeny");
+const suggestionsContainer = document.getElementById("suggestions");
+
+function formatDetail(name, input) {
+  if (!input || typeof input !== "object") return "";
+  if (name === "Bash" && input.command) return truncate(input.command, 120);
+  if ((name === "Edit" || name === "Write" || name === "Read") && input.file_path)
+    return truncate(input.file_path, 120);
+  if ((name === "Glob" || name === "Grep") && input.pattern)
+    return truncate(input.pattern, 120);
+  for (const v of Object.values(input)) {
+    if (typeof v === "string") return truncate(v, 100);
+  }
+  return truncate(JSON.stringify(input), 100);
+}
+
+function truncate(s, max) {
+  if (s.length <= max) return s;
+  return s.slice(0, max - 1) + "\u2026";
+}
+
+function getSuggestionLabel(s, lang) {
+  if (s.type === "setMode") {
+    if (s.mode === "acceptEdits") return lang === "zh" ? "\u81EA\u52A8\u63A5\u53D7\u7F16\u8F91" : "Auto-accept edits";
+    if (s.mode === "plan") return lang === "zh" ? "\u5207\u6362\u5230 Plan \u6A21\u5F0F" : "Switch to plan mode";
+    return s.mode;
+  }
+  if (s.type === "addRules") {
+    // Support both flat (toolName/ruleContent) and nested (rules:[]) formats
+    const rule = Array.isArray(s.rules) && s.rules[0] ? s.rules[0] : s;
+    const rc = rule.ruleContent || s.ruleContent;
+    const tn = rule.toolName || s.toolName || "";
+    if (rc) {
+      if (rc.includes("**")) {
+        const dir = rc.split("**")[0].replace(/[\\/]$/, "").split(/[\\/]/).pop() || rc;
+        return lang === "zh" ? `\u5141\u8BB8 ${tn} \u5728 ${dir}/` : `Allow ${tn} in ${dir}/`;
+      }
+      const short = rc.length > 30 ? rc.slice(0, 29) + "\u2026" : rc;
+      return lang === "zh" ? `\u59CB\u7EC8\u5141\u8BB8 \`${short}\`` : `Always allow \`${short}\``;
+    }
+  }
+  return lang === "zh" ? "\u59CB\u7EC8\u5141\u8BB8" : "Always allow";
+}
+
+function disableAll() {
+  btnAllow.disabled = true;
+  btnDeny.disabled = true;
+  for (const btn of suggestionsContainer.children) btn.disabled = true;
+}
+
+function show(data) {
+  // Tool pill
+  toolPill.textContent = data.toolName || "Unknown";
+  toolPill.setAttribute("data-tool", data.toolName || "");
+
+  // Command block (textContent only — never innerHTML)
+  commandBlock.textContent = formatDetail(data.toolName, data.toolInput);
+
+  // Button labels
+  btnAllow.textContent = data.lang === "zh" ? "\u6279\u51C6" : "Allow";
+  btnDeny.textContent = data.lang === "zh" ? "\u62D2\u7EDD" : "Deny";
+
+  // Dynamic suggestion buttons
+  suggestionsContainer.innerHTML = "";
+  if (Array.isArray(data.suggestions)) {
+    data.suggestions.forEach((s, i) => {
+      const btn = document.createElement("button");
+      btn.className = "btn-suggestion";
+      btn.textContent = getSuggestionLabel(s, data.lang);
+      btn.addEventListener("click", () => {
+        disableAll();
+        window.bubbleAPI.decide("suggestion:" + i);
+      });
+      suggestionsContainer.appendChild(btn);
+    });
+  }
+
+  // Re-enable buttons
+  btnAllow.disabled = false;
+  btnDeny.disabled = false;
+
+  card.classList.remove("hiding");
+  card.classList.add("visible");
+}
+
+function hide() {
+  card.classList.remove("visible");
+  card.classList.add("hiding");
+}
+
+btnAllow.addEventListener("click", () => {
+  btnAllow.textContent = "...";
+  disableAll();
+  window.bubbleAPI.decide("allow");
+});
+
+btnDeny.addEventListener("click", () => {
+  btnDeny.textContent = "...";
+  disableAll();
+  window.bubbleAPI.decide("deny");
+});
+
+window.bubbleAPI.onPermissionShow(show);
+window.bubbleAPI.onPermissionHide(hide);
+</script>
+</body>
+</html>
